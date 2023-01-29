@@ -1,0 +1,1 @@
+from .dyndns import update
