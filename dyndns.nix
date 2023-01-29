@@ -1,31 +1,17 @@
 
-{ lib, buildPythonApplication, fetchgit, requests, pytest }:
-
-# with import <nixpkgs> {};
-# with pkgs.python3Packages;
-
-# let
-#   pkgs = import nixpkgs {};
-# in
+{ lib, buildPythonApplication, fetchgit, requests }:
 
 buildPythonApplication {
   pname = "dyndns-update";
   version = "20230129";
   format = "setuptools";
 
-  src = ./.;
-  # src = pkgs.fetchgitPrivate /home/quentin/.ssh/id_ed25519 {
-  #   url = "ssh://pi@raspberrypi/srv/git/dyndns.git";
-  #   rev = "4478096a60f360c9675da7a1264372129916a523";
-  # };
+  src = builtins.fetchGit {
+    url = "git@github.com:Limosine/dyndns-update.git";
+    rev = "39d7c07b621f4348759b97bfa600b2e8b1153315";
+  };
 
   propagatedBuildInputs = [ requests ];
 
   doCheck = false;
-
-  # checkInputs = [ pytest ];
-
-  # checkPhase = ''
-  #   pytest
-  # '';
 }
