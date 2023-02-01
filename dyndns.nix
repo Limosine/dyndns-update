@@ -1,7 +1,7 @@
 
-{ lib, buildPythonApplication, fetchgit, requests }:
+{ lib, buildPythonPackage, requests }:
 
-buildPythonApplication {
+buildPythonPackage rec {
   pname = "dyndns-update";
   version = "20230129";
   format = "setuptools";
@@ -13,5 +13,12 @@ buildPythonApplication {
 
   propagatedBuildInputs = [ requests ];
 
+  pythonImportsCheck = [ "dyndns_update" ];
+
   doCheck = false;
+
+  meta = with lib; {
+    description = "Update your DynDNS hosts";
+    homepage = "https://github.com/Limosine/dyndns-update";
+  };
 }
