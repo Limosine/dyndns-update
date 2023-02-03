@@ -1,14 +1,16 @@
 
-{ lib, buildPythonPackage, requests }:
+{ lib, buildPythonPackage, pythonOlder, requests }:
 
 buildPythonPackage rec {
   pname = "dyndns-update";
   version = "20230129";
   format = "setuptools";
 
+  disabled = pythonOlder "3.10";
+
   src = builtins.fetchGit {
     url = "git@github.com:Limosine/dyndns-update.git";
-    rev = "39d7c07b621f4348759b97bfa600b2e8b1153315";
+    rev = "ad24d3f25cea7440e30b1497cdc73052cacaaac3";
   };
 
   propagatedBuildInputs = [ requests ];
