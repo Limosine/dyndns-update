@@ -10,7 +10,7 @@ buildPythonPackage rec {
 
   src = builtins.fetchGit {
     url = "git@github.com:Limosine/dyndns-update.git";
-    rev = "ad24d3f25cea7440e30b1497cdc73052cacaaac3";
+    rev = "91e39d2f510e056684edec7bd4370b7deea54d1a";
   };
 
   propagatedBuildInputs = [ requests ];
