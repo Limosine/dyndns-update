@@ -12,4 +12,9 @@ setup(
     install_requires=[
         'requests',
     ],
+    entry_points={
+        'console_scripts': [
+            'dyndns-update=dyndns_update:command_line',
+        ],
+    },
 )

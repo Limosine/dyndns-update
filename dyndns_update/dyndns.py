@@ -1,8 +1,23 @@
 import requests
 import os.path
 import sys
+import argparse
+from getpass import getpass
 
 cacheExec = False
+
+def command_line():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("provider", nargs="?", choices=["sp", "noip"], help="Update a hostname by provider")
+    parser.add_argument("-c", "--config", help="Specify a config file")
+    args = parser.parse_args()
+    if args.provider:
+        username = input("Username: ")
+        password = getpass()
+        hostname = input("Hostname: ")
+        update(args.provider, username, password, hostname)
+    if args.config:
+        processConfig(readConfig(args.config))
 
 def getIP():
     data = requests.get("https://ipinfo.io/json", verify = True).json()
@@ -55,14 +70,14 @@ def processConfig(options):
 def cache(ip):
     global cacheExec
     if cacheExec == False:
-        # cacheExec = True
+        cacheExec = True
         if os.path.exists("/tmp/dyndns-cache") == True:
             cachefile = open("/tmp/dyndns-cache", "r")
             ipold = str(cachefile.read())
             cachefile.close()
             if ip == ipold:
                 print("IP hasn't changed.")
-                # sys.exit()
+                sys.exit()
         cachefile = open("/tmp/dyndns-cache", "w")
         cachefile.write(ip)
         cachefile.close()
