@@ -10,14 +10,15 @@ def command_line():
     parser = argparse.ArgumentParser()
     parser.add_argument("provider", nargs="?", choices=["sp", "noip"], help="Update a hostname by provider")
     parser.add_argument("-c", "--config", help="Specify a config file")
+    parser.add_argument("-f", "--force", action="store_true", help="Disable cache")
     args = parser.parse_args()
     if args.provider:
         username = input("Username: ")
         password = getpass()
         hostname = input("Hostname: ")
-        update(args.provider, username, password, hostname)
+        update(args.provider, username, password, hostname, args.force)
     if args.config:
-        processConfig(readConfig(args.config))
+        processConfig(args.config, args.force)
 
 def getIP():
     data = requests.get("https://ipinfo.io/json", verify = True).json()
@@ -39,33 +40,34 @@ def getURL(provider):
             sys.exit()
 
 def readConfig(path):
-    options = {
-        "update": [],
-    }
-    configfile = open(path,  "r")
-    while True:
-        line = str(configfile.readline().strip())
-        if not line:
-            break
-        elif line[-1] == "{":
-            inOption = line.split()[0]
-            options[inOption].append({})
-            while True:
+    def subOption():
+        subOptions = {}
+        while True:
                 line = str(configfile.readline().strip())
+                if not line:
+                    break
                 if line == "}":
                     break
+                elif line[-1] == "{":
+                    inOption = line.split()[0]
+                    subOptions[inOption] = subOption()
                 else:
                     option = line.split(" = ")
-                    options[inOption][-1][option[0]] = option[1]
-        else:
-            option = line.split(" = ")
-            options[option[0]] = option[1]
+                    subOptions[option[0]] = option[1]
+        return subOptions
+
+    options = {}
+    configfile = open(path,  "r")
+    options = subOption()
     configfile.close()
     return options
 
-def processConfig(options):
+def processConfig(path, force):
+    options = readConfig(path)
+    if "force" in options and force != True:
+        force = eval(options["force"])
     for i in options["update"]:
-        update(i["provider"], i["username"], i["password"], i["hostname"])
+        update(options["update"][i]["provider"], options["update"][i]["username"], options["update"][i]["password"], options["update"][i]["hostname"], force)
 
 def cache(ip):
     global cacheExec
@@ -82,9 +84,10 @@ def cache(ip):
         cachefile.write(ip)
         cachefile.close()
 
-def update(provider, username, password, hostname):
+def update(provider, username, password, hostname, force):
     ip = getIP()
-    cache(ip)
+    if not force:
+        cache(ip)
     url = eval(getURL(provider))
     r = requests.post(url)
     print(r.content.decode())
