@@ -17,8 +17,13 @@ def command_line():
         password = getpass()
         hostname = input("Hostname: ")
         update(args.provider, username, password, hostname, args.force)
-    if args.config:
+    elif args.config:
         processConfig(args.config, args.force)
+    else:
+       if os.path.exists(os.path.expanduser("~/.config/dyndns-update/dyndns.cfg")):
+         processConfig(os.path.expanduser("~/.config/dyndns-update/dyndns.cfg"), args.force)
+       elif os.path.exists("/etc/dyndns-update/dyndns.cfg"):
+         processConfig("/etc/dyndns-update/dyndns.cfg", args.force)
 
 def getIP():
     data = requests.get("https://ipinfo.io/json", verify = True).json()
@@ -73,7 +78,7 @@ def cache(ip):
     global cacheExec
     if cacheExec == False:
         cacheExec = True
-        if os.path.exists("/tmp/dyndns-cache") == True:
+        if os.path.exists("/tmp/dyndns-cache"):
             cachefile = open("/tmp/dyndns-cache", "r")
             ipold = str(cachefile.read())
             cachefile.close()
