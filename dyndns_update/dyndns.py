@@ -8,7 +8,7 @@ cacheExec = False
 
 def command_line():
     parser = argparse.ArgumentParser()
-    parser.add_argument("provider", nargs="?", choices=["sp", "noip"], help="Update a hostname by provider")
+    parser.add_argument("provider", nargs="?", choices=["sp", "noip", "strato"], help="Update a hostname by provider")
     parser.add_argument("-c", "--config", help="Specify a config file")
     parser.add_argument("-f", "--force", action="store_true", help="Disable cache")
     args = parser.parse_args()
@@ -33,15 +33,18 @@ def getURL(provider):
     urls = [
         '"https://update.spdyn.de/nic/update?hostname=" + hostname + "&myip=" + ip + "&user=" + username + "&pass=" + password',
         '"https://" + username + ":" + password + "@dynupdate.no-ip.com/nic/update?hostname=" + hostname + "&myip=" + ip',
+        '"https://" + hostname + ":" + password + "@dyndns.strato.com/nic/update?hostname=" + hostname + "&myip=" + ip',
     ]
     match provider:
         case "sp":
             return urls[0]
         case "noip":
             return urls[1]
+        case "strato":
+            return urls[2]
         case _:
             print("Provider not yet supported.")
-            print("Supported providers: Securepoint (sp), NoIP (noip)")
+            print("Supported providers: Securepoint (sp), NoIP (noip), STRATO (strato)")
             sys.exit()
 
 def readConfig(path):
@@ -94,5 +97,6 @@ def update(provider, username, password, hostname, force):
     if not force:
         cache(ip)
     url = eval(getURL(provider))
-    r = requests.post(url)
+    print(url)
+    r = requests.get(url)
     print(r.content.decode())

@@ -16,7 +16,7 @@ $ pip install ./dyndns-update
     usage: dyndns-update [-h] [-c CONFIG] [-f] [{sp,noip}]
 
     positional arguments:
-      {sp,noip}             Update a hostname by provider
+      {sp,noip,strato}      Update a hostname by provider
 
     options:
       -h, --help            show this help message and exit
