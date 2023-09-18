@@ -10,8 +10,8 @@ buildPythonPackage rec {
   src = fetchFromGitHub {
     owner = "Limosine";
     repo = "dyndns-update";
-    rev = "5b81cd580ec4fe900885c0beb9ed9de5c8fd16b4";
-    sha256 = "sha256-Ow52OKH1HiEzGHE0//+0LBHJ0OOxjyY23SXCpGJ+KXg=";
+    rev = "25d90fdc58410373fdc9fab12a1dae6030ca1ecd";
+    sha256 = "sha256-CabzHIkSZMoMJGCRa4FBNq4JEGyFDW96ukLQzKm1HfQ=";
   };
 
   propagatedBuildInputs = [ requests ];
