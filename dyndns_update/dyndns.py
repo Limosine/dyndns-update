@@ -26,14 +26,15 @@ def command_line():
          processConfig("/etc/dyndns-update/dyndns.cfg", args.force)
 
 def getIP():
-    data = requests.get("https://ipinfo.io/json", verify = True).json()
-    return data['ip']
+    datav4 = requests.get("https://ipv4.seeip.org/jsonip", verify = True).json()
+    datav6 = requests.get("https://ipv6.seeip.org/jsonip", verify = True).json()
+    return [datav4['ip'], datav6['ip']]
 
 def getURL(provider):
     urls = [
-        '"https://update.spdyn.de/nic/update?hostname=" + hostname + "&myip=" + ip + "&user=" + username + "&pass=" + password',
-        '"https://" + username + ":" + password + "@dynupdate.no-ip.com/nic/update?hostname=" + hostname + "&myip=" + ip',
-        '"https://" + hostname + ":" + password + "@dyndns.strato.com/nic/update?hostname=" + hostname + "&myip=" + ip',
+        '"https://update.spdyn.de/nic/update?hostname=" + hostname + "&myip=" + ip[1] + "," + ip[2] + "&user=" + username + "&pass=" + password',
+        '"https://" + username + ":" + password + "@dynupdate.no-ip.com/nic/update?hostname=" + hostname + "&myip=" + ip[1] + "," + ip[2]',
+        '"https://" + hostname + ":" + password + "@dyndns.strato.com/nic/update?hostname=" + hostname + "&myip=" + ip[1] + "," + ip[2]',
     ]
     match provider:
         case "sp":
@@ -95,7 +96,7 @@ def cache(ip):
 def update(provider, username, password, hostname, force):
     ip = getIP()
     if not force:
-        cache(ip)
+        cache(ip[1])
     url = eval(getURL(provider))
     print(url)
     r = requests.get(url)
