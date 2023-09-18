@@ -32,9 +32,9 @@ def getIP():
 
 def getURL(provider):
     urls = [
-        '"https://update.spdyn.de/nic/update?hostname=" + hostname + "&myip=" + ip[1] + "," + ip[2] + "&user=" + username + "&pass=" + password',
-        '"https://" + username + ":" + password + "@dynupdate.no-ip.com/nic/update?hostname=" + hostname + "&myip=" + ip[1] + "," + ip[2]',
-        '"https://" + hostname + ":" + password + "@dyndns.strato.com/nic/update?hostname=" + hostname + "&myip=" + ip[1] + "," + ip[2]',
+        '"https://update.spdyn.de/nic/update?hostname=" + hostname + "&myip=" + ip[0] + "," + ip[1] + "&user=" + username + "&pass=" + password',
+        '"https://" + username + ":" + password + "@dynupdate.no-ip.com/nic/update?hostname=" + hostname + "&myip=" + ip[0] + "," + ip[1]',
+        '"https://" + hostname + ":" + password + "@dyndns.strato.com/nic/update?hostname=" + hostname + "&myip=" + ip[0] + "," + ip[1]',
     ]
     match provider:
         case "sp":
@@ -96,7 +96,7 @@ def cache(ip):
 def update(provider, username, password, hostname, force):
     ip = getIP()
     if not force:
-        cache(ip[1])
+        cache(ip[0])
     url = eval(getURL(provider))
     print(url)
     r = requests.get(url)
