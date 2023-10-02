@@ -119,7 +119,7 @@ def updateCloudflare(api_email, api_key, zone_identifier, identifier, type, host
     print(url)
     headers = {"Content-Type": "application/json", "X-Auth-Email": api_email, "X-Auth-Key": api_key}
     data = {
-      "content": ip[0],
+      "content": ip[0] if type == "A" else ip[1],
       "name": hostname,
       "type": type
     }
