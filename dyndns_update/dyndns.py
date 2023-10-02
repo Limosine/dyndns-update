@@ -19,9 +19,10 @@ def command_line():
             api_key = getpass("API-Key: ")
             zone_identifier = input("Zone-Identifier: ")
             identifier = input("Identifier: ")
+            type = input("Type: ")
             hostname = input("Hostname: ")
 
-            updateCloudflare(api_email, api_key, zone_identifier, identifier, hostname, True)
+            updateCloudflare(api_email, api_key, zone_identifier, identifier, type, hostname, True)
         else:
             username = input("Username: ")
             password = getpass()
@@ -91,7 +92,7 @@ def processConfig(path, force):
         force = eval(options["force"])
     for i in options["update"]:
         if options["update"][i]["provider"] == "cloudflare":
-            updateCloudflare(options["update"][i]["api_email"], options["update"][i]["api_key"], options["update"][i]["zone_identifier"], options["update"][i]["identifier"], options["update"][i]["hostname"], force)
+            updateCloudflare(options["update"][i]["api_email"], options["update"][i]["api_key"], options["update"][i]["zone_identifier"], options["update"][i]["identifier"], options["update"][i]["type"], options["update"][i]["hostname"], force)
         else:
             update(options["update"][i]["provider"], options["update"][i]["username"], options["update"][i]["password"], options["update"][i]["hostname"], force)
 
@@ -110,7 +111,7 @@ def cache(ip):
         cachefile.write(ip)
         cachefile.close()
 
-def updateCloudflare(api_email, api_key, zone_identifier, identifier, hostname, force):
+def updateCloudflare(api_email, api_key, zone_identifier, identifier, type, hostname, force):
     ip = getIP()
     if not force:
         cache(ip[0])
@@ -120,7 +121,7 @@ def updateCloudflare(api_email, api_key, zone_identifier, identifier, hostname, 
     data = {
       "content": ip[0],
       "name": hostname,
-      "type": "A"
+      "type": type
     }
     r = requests.put(url, headers=headers, json=data)
     print(r.content.decode())
