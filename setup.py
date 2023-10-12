@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='dyndns-update',
-    version='20230205',
+    version='20231012',
     description='Update your DynDNS hosts',
     author='Quentin Frey',
     author_email='quentin.frey@proton.me',

@@ -5,14 +5,13 @@ import os.path
 import requests
 import sys
 
-cacheExec = False
-
 def command_line():
     parser = argparse.ArgumentParser()
     parser.add_argument("provider", nargs="?", choices=["sp", "noip", "strato", "cloudflare"], help="Update a hostname by provider")
     parser.add_argument("-c", "--config", help="Specify a config file")
     parser.add_argument("-f", "--force", action="store_true", help="Disable cache")
     args = parser.parse_args()
+
     if args.provider:
         if args.provider == "cloudflare":
             api_email = input("API-Email: ")
@@ -22,13 +21,15 @@ def command_line():
             type = input("Type: ")
             hostname = input("Hostname: ")
 
-            updateCloudflare(api_email, api_key, zone_identifier, identifier, type, hostname, True)
+            ip = getIP(True)
+            updateCloudflare(ip, api_email, api_key, zone_identifier, identifier, type, hostname)
         else:
             username = input("Username: ")
             password = getpass()
             hostname = input("Hostname: ")
 
-            update(args.provider, username, password, hostname, True)
+            ip = getIP(True)
+            update(ip, args.provider, username, password, hostname)
     elif args.config:
         processConfig(args.config, args.force)
     else:
@@ -37,10 +38,32 @@ def command_line():
         elif os.path.exists("/etc/dyndns-update/dyndns.cfg"):
             processConfig("/etc/dyndns-update/dyndns.cfg", args.force)
 
-def getIP():
-    datav4 = requests.get("https://ipv4.seeip.org/jsonip", verify = True).json()
-    datav6 = requests.get("https://ipv6.seeip.org/jsonip", verify = True).json()
-    return [datav4['ip'], datav6['ip']]
+def getIP(force):
+    print("getIP accessed")
+    ipv4 = requests.get("https://ipv4.seeip.org/jsonip").json()['ip']
+    ipv6 = None
+
+    if os.path.exists("/tmp/dyndns-cache"):
+        cachefile = open("/tmp/dyndns-cache", "r")
+        ip = str(cachefile.read()).split(", ")
+        cachefile.close()
+
+        ipv4_cache = ip[0]
+
+        if ipv4 == ipv4_cache and force != True:
+            print("IP hasn't changed.")
+            sys.exit()
+        else:
+            ipv4 = ipv4_cache
+            ipv6 = ip[1]
+    else:
+        ipv6 = requests.get("https://ipv6.seeip.org/jsonip").json()['ip']
+
+    cachefile = open("/tmp/dyndns-cache", "w")
+    cachefile.write(ipv4 + ", " + ipv6)
+    cachefile.close()
+
+    return [ipv4, ipv6]
 
 def getURL(provider):
     urls = [
@@ -90,31 +113,15 @@ def processConfig(path, force):
     options = readConfig(path)
     if "force" in options and force != True:
         force = eval(options["force"])
+    ip = getIP(force)
+
     for i in options["update"]:
         if options["update"][i]["provider"] == "cloudflare":
-            updateCloudflare(options["update"][i]["api_email"], options["update"][i]["api_key"], options["update"][i]["zone_identifier"], options["update"][i]["identifier"], options["update"][i]["type"], options["update"][i]["hostname"], force)
+            updateCloudflare(ip, options["update"][i]["api_email"], options["update"][i]["api_key"], options["update"][i]["zone_identifier"], options["update"][i]["identifier"], options["update"][i]["type"], options["update"][i]["hostname"])
         else:
-            update(options["update"][i]["provider"], options["update"][i]["username"], options["update"][i]["password"], options["update"][i]["hostname"], force)
+            update(ip, options["update"][i]["provider"], options["update"][i]["username"], options["update"][i]["password"], options["update"][i]["hostname"])
 
-def cache(ip):
-    global cacheExec
-    if cacheExec == False:
-        cacheExec = True
-        if os.path.exists("/tmp/dyndns-cache"):
-            cachefile = open("/tmp/dyndns-cache", "r")
-            ipold = str(cachefile.read())
-            cachefile.close()
-            if ip == ipold:
-                print("IP hasn't changed.")
-                sys.exit()
-        cachefile = open("/tmp/dyndns-cache", "w")
-        cachefile.write(ip)
-        cachefile.close()
-
-def updateCloudflare(api_email, api_key, zone_identifier, identifier, type, hostname, force):
-    ip = getIP()
-    if not force:
-        cache(ip[0])
+def updateCloudflare(ip, api_email, api_key, zone_identifier, identifier, type, hostname):
     url = eval(getURL("cloudflare")[0])
     print(url)
     headers = {"Content-Type": "application/json", "X-Auth-Email": api_email, "X-Auth-Key": api_key}
@@ -126,10 +133,7 @@ def updateCloudflare(api_email, api_key, zone_identifier, identifier, type, host
     r = requests.put(url, headers=headers, json=data)
     print(r.content.decode())
 
-def update(provider, username, password, hostname, force):
-    ip = getIP()
-    if not force:
-        cache(ip[0])
+def update(ip, provider, username, password, hostname):
     url = eval(getURL(provider)[0])
     print(url)
     r = requests.get(url)
