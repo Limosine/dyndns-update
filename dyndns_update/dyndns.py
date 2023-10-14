@@ -41,7 +41,7 @@ def command_line():
 def getIP(force):
     print("getIP accessed")
     ipv4 = requests.get("https://api.ipify.org?format=json").json()['ip']
-    ipv6 = None
+    ipv6 = ""
 
     if os.path.exists("/tmp/dyndns-cache"):
         cachefile = open("/tmp/dyndns-cache", "r")
