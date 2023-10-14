@@ -53,7 +53,7 @@ def getIP(force):
         if ipv4 == ipv4_cache and force != True:
             print("IP hasn't changed.")
             sys.exit()
-        else if force == True:
+        elif force == True:
             ipv6 = ip[1]
     else:
         ipv6 = requests.get("https://api6.ipify.org?format=json").json()['ip']
