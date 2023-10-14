@@ -7,7 +7,7 @@ import sys
 
 def command_line():
     parser = argparse.ArgumentParser()
-    parser.add_argument("provider", nargs="?", choices=["sp", "noip", "strato", "cloudflare"], help="Update a hostname by provider")
+    parser.add_argument("provider", nargs="?", choices=["noip", "securepoint", "strato", "cloudflare"], help="Update a hostname by provider")
     parser.add_argument("-c", "--config", help="Specify a config file")
     parser.add_argument("-f", "--force", action="store_true", help="Disable cache")
     args = parser.parse_args()
@@ -40,7 +40,7 @@ def command_line():
 
 def getIP(force):
     print("getIP accessed")
-    ipv4 = requests.get("https://ipv4.seeip.org/jsonip").json()['ip']
+    ipv4 = requests.get("https://api.ipify.org?format=json").json()['ip']
     ipv6 = None
 
     if os.path.exists("/tmp/dyndns-cache"):
@@ -57,7 +57,7 @@ def getIP(force):
             ipv4 = ipv4_cache
             ipv6 = ip[1]
     else:
-        ipv6 = requests.get("https://ipv6.seeip.org/jsonip").json()['ip']
+        ipv6 = requests.get(("https://api6.ipify.org?format=json").json()['ip']
 
     cachefile = open("/tmp/dyndns-cache", "w")
     cachefile.write(ipv4 + ", " + ipv6)
@@ -66,25 +66,19 @@ def getIP(force):
     return [ipv4, ipv6]
 
 def getURL(provider):
-    urls = [
-        ['"https://update.spdyn.de/nic/update?hostname=" + hostname + "&myip=" + ip[0] + "," + ip[1] + "&user=" + username + "&pass=" + password', "get"],
-        ['"https://" + username + ":" + password + "@dynupdate.no-ip.com/nic/update?hostname=" + hostname + "&myip=" + ip[0] + "," + ip[1]', "get"],
-        ['"https://" + hostname + ":" + password + "@dyndns.strato.com/nic/update?hostname=" + hostname + "&myip=" + ip[0] + "," + ip[1]', "get"],
-        ['"https://api.cloudflare.com/client/v4/zones/" + zone_identifier + "/dns_records/" + identifier', "put"],
-    ]
-    match provider:
-        case "sp":
-            return urls[0]
-        case "noip":
-            return urls[1]
-        case "strato":
-            return urls[2]
-        case "cloudflare":
-            return urls[3]
-        case _:
-            print("Provider not yet supported.")
-            print("Supported providers: Securepoint (sp), NoIP (noip), STRATO (strato), Cloudflare (cloudflare)")
-            sys.exit()
+    urls = {
+        "noip": '"https://" + username + ":" + password + "@dynupdate.no-ip.com/nic/update?hostname=" + hostname + "&myip=" + ip[0] + "," + ip[1]',
+        "securepoint": '"https://update.spdyn.de/nic/update?hostname=" + hostname + "&myip=" + ip[0] + "," + ip[1] + "&user=" + username + "&pass=" + password',
+        "strato": '"https://" + hostname + ":" + password + "@dyndns.strato.com/nic/update?hostname=" + hostname + "&myip=" + ip[0] + "," + ip[1]'
+    }
+
+    url = urls.get(provider)
+    if url == None:
+        print("Provider not yet supported.")
+        print("Supported providers: " + ", ".join(list(urls.keys())) + ", cloudflare")
+        sys.exit()
+    else:
+        return url
 
 def readConfig(path):
     def subOption():
@@ -122,7 +116,7 @@ def processConfig(path, force):
             update(ip, options["update"][i]["provider"], options["update"][i]["username"], options["update"][i]["password"], options["update"][i]["hostname"])
 
 def updateCloudflare(ip, api_email, api_key, zone_identifier, identifier, type, hostname):
-    url = eval(getURL("cloudflare")[0])
+    url = "https://api.cloudflare.com/client/v4/zones/" + zone_identifier + "/dns_records/" + identifier
     print(url)
     headers = {"Content-Type": "application/json", "X-Auth-Email": api_email, "X-Auth-Key": api_key}
     data = {
