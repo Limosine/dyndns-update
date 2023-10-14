@@ -57,7 +57,7 @@ def getIP(force):
             ipv4 = ipv4_cache
             ipv6 = ip[1]
     else:
-        ipv6 = requests.get(("https://api6.ipify.org?format=json").json()['ip']
+        ipv6 = requests.get("https://api6.ipify.org?format=json").json()['ip']
 
     cachefile = open("/tmp/dyndns-cache", "w")
     cachefile.write(ipv4 + ", " + ipv6)
