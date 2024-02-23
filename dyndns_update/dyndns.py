@@ -14,7 +14,6 @@ def command_line():
 
     if args.provider:
         if args.provider == "cloudflare":
-            api_email = input("API-Email: ")
             api_token = getpass("API-Token: ")
             zone_identifier = input("Zone-Identifier: ")
             identifier = input("Identifier: ")
@@ -114,11 +113,11 @@ def processConfig(path, force):
 
     for i in options["update"]:
         if options["update"][i]["provider"] == "cloudflare":
-            updateCloudflare(ip, options["update"][i]["api_email"], options["update"][i]["api_token"], options["update"][i]["zone_identifier"], options["update"][i]["identifier"], options["update"][i]["type"], options["update"][i]["hostname"])
+            updateCloudflare(ip, options["update"][i]["api_token"], options["update"][i]["zone_identifier"], options["update"][i]["identifier"], options["update"][i]["type"], options["update"][i]["hostname"])
         else:
             update(ip, options["update"][i]["provider"], options["update"][i]["username"], options["update"][i]["password"], options["update"][i]["hostname"])
 
-def updateCloudflare(ip, api_email, api_token, zone_identifier, identifier, type, hostname):
+def updateCloudflare(ip, api_token, zone_identifier, identifier, type, hostname):
     url = "https://api.cloudflare.com/client/v4/zones/" + zone_identifier + "/dns_records/" + identifier
     print(url)
     headers = {"Content-Type": "application/json", "Authorization": "Bearer " + api_token}

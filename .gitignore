@@ -3,4 +3,6 @@ result
 build/
 dist/
 dyndns_update.egg-info/
+
 test.cfg
+utils.sh
