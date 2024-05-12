@@ -4,6 +4,7 @@ import json
 import os.path
 import requests
 import sys
+import time
 
 def command_line():
     parser = argparse.ArgumentParser()
@@ -38,7 +39,6 @@ def command_line():
             processConfig("/etc/dyndns-update/dyndns.cfg", args.force)
 
 def getIP(force):
-    print("getIP accessed")
     ipv4 = requests.get("https://api.ipify.org?format=json").json()['ip']
     ipv6 = ""
 
@@ -118,19 +118,41 @@ def processConfig(path, force):
             update(ip, options["update"][i]["provider"], options["update"][i]["username"], options["update"][i]["password"], options["update"][i]["hostname"])
 
 def updateCloudflare(ip, api_token, zone_identifier, identifier, type, hostname):
-    url = "https://api.cloudflare.com/client/v4/zones/" + zone_identifier + "/dns_records/" + identifier
-    print(url)
-    headers = {"Content-Type": "application/json", "Authorization": "Bearer " + api_token}
-    data = {
-      "content": ip[0] if type == "A" else ip[1],
-      "name": hostname,
-      "type": type
-    }
-    r = requests.put(url, headers=headers, json=data)
-    print(r.content.decode())
+    def update():
+        url = "https://api.cloudflare.com/client/v4/zones/" + zone_identifier + "/dns_records/" + identifier
+        headers = {"Content-Type": "application/json", "Authorization": "Bearer " + api_token}
+        data = {
+            "content": ip[0] if type == "A" else ip[1],
+            "name": hostname,
+            "type": type
+        }
+        r = requests.patch(url, headers=headers, json=data).json()
+        print(hostname + ": " + str(r["success"]))
+
+        if r["success"] == False:
+            print("Errors: " + str(r["errors"]))
+
+    try:
+        update()
+    except:
+        try:
+            time.sleep(3)
+            update()
+        except:
+            print("Failed to update: " + hostname)
 
 def update(ip, provider, username, password, hostname):
-    url = eval(getURL(provider)[0])
-    print(url)
-    r = requests.get(url)
-    print(r.content.decode())
+    def update():
+        url = eval(getURL(provider)[0])
+        print(url)
+        r = requests.get(url)
+        print(r.content.decode())
+
+    try:
+        update()
+    except:
+        try:
+            time.sleep(3)
+            update()
+        except:
+            print("Failed to update: " + hostname)
