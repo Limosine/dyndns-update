@@ -5,6 +5,7 @@ import os.path
 import requests
 import sys
 import time
+from xml.etree import ElementTree as ET
 
 def command_line():
     parser = argparse.ArgumentParser()
@@ -39,6 +40,12 @@ def command_line():
             processConfig("/etc/dyndns-update/dyndns.cfg", args.force)
 
 def getIP(force):
+    try:
+        return getIPViaFritzBox(force)
+    except:
+        return getIPViaExternal(force)
+
+def getIPViaExternal(force):
     ipv4 = requests.get("https://api.ipify.org?format=json").json()['ip']
     ipv6 = ""
 
@@ -60,6 +67,57 @@ def getIP(force):
 
     else:
         ipv6 = requests.get("https://api6.ipify.org?format=json").json()['ip']
+
+    cachefile = open("/tmp/dyndns-cache", "w")
+    cachefile.write(ipv4 + ", " + ipv6)
+    cachefile.close()
+
+    return [ipv4, ipv6]
+
+def getIPViaFritzBox(force):
+    xml_data = "<?xml version=\"1.0\" encoding=\"utf-8\" ?><s:Envelope s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"><s:Body><u:GetStatusInfo xmlns:u=\"urn:schemas-upnp-org:service:WANIPConnection:1\" /></s:Body></s:Envelope>"
+    namespaces = {'s': 'http://schemas.xmlsoap.org/soap/envelope/', 'u': 'urn:schemas-upnp-org:service:WANIPConnection:1'}
+    headers = {"Content-Type": "text/xml; charset=\"utf-8\"", "SoapAction": "urn:schemas-upnp-org:service:WANIPConnection:1#GetExternalIPAddress"}
+
+    ipv4_data = requests.post("http://192.168.178.1:49000/igdupnp/control/WANIPConn1", data=xml_data, headers=headers).content
+
+    root = ET.fromstring(ipv4_data)
+    ipv4 = root.find("./s:Body/u:GetExternalIPAddressResponse/NewExternalIPAddress", namespaces).text
+
+    if ipv4 == None:
+        raise Exception("No IP Address contained")
+
+    ipv6 = ""
+
+    if os.path.exists("/tmp/dyndns-cache"):
+        cachefile = open("/tmp/dyndns-cache", "r")
+        ip = str(cachefile.read()).split(", ")
+        cachefile.close()
+
+        ipv4_cache = ip[0]
+
+        if ipv4 == ipv4_cache:
+            print("IP hasn't changed.")
+            if force != True:
+                sys.exit()
+            else:
+                ipv6 = ip[1]
+        else:
+            headers = {"Content-Type": "text/xml; charset=\"utf-8\"", "SoapAction": "urn:schemas-upnp-org:service:WANIPConnection:1#X_AVM_DE_GetExternalIPv6Address"}
+            ipv6_data = requests.post("http://192.168.178.1:49000/igdupnp/control/WANIPConn1", data=xml_data, headers=headers).content
+
+            root = ET.fromstring(ipv6_data)
+            ipv6 = root.find("./s:Body/u:GetExternalIPAddressResponse/NewExternalIPAddress", namespaces).text
+
+    else:
+        headers = {"Content-Type": "text/xml; charset=\"utf-8\"", "SoapAction": "urn:schemas-upnp-org:service:WANIPConnection:1#X_AVM_DE_GetExternalIPv6Address"}
+        ipv6_data = requests.post("http://192.168.178.1:49000/igdupnp/control/WANIPConn1", data=xml_data, headers=headers).content
+
+        root = ET.fromstring(ipv6_data)
+        ipv6 = root.find("./s:Body/u:X_AVM_DE_GetExternalIPv6AddressResponse/NewExternalIPv6Address", namespaces).text
+
+        if ipv6 == None:
+            raise Exception("No IPv6 Address contained")
 
     cachefile = open("/tmp/dyndns-cache", "w")
     cachefile.write(ipv4 + ", " + ipv6)
